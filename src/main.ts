@@ -1,11 +1,10 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as bodyParser from 'body-parser';
 import { useContainer } from 'class-validator';
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
-import { JwtAuthGuard } from './core/authz/jwt.authguard';
-import * as bodyParser from 'body-parser';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
   /* KAESER-SC2-API VERSION */
@@ -27,8 +26,6 @@ async function bootstrap() {
   app.useLogger(app.get(Logger));
   app.useGlobalInterceptors(new LoggerErrorInterceptor());
 
-  app.useGlobalGuards(new JwtAuthGuard());
-
   app.enableCors();
 
   app.enableVersioning({
@@ -43,9 +40,7 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle(title)
-    .setDescription(
-      `Kaeser Sigma Control 2 API`,
-    )
+    .setDescription(`Kaeser Sigma Control 2 API`)
     .setLicense('GPL-3.0', 'https://www.gnu.org/licenses/gpl-3.0.en.html')
     .setVersion(version)
     .build();

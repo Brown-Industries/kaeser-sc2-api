@@ -33,7 +33,7 @@
     "@nestjs/platform-express": "^10.2.6",
     "@nestjs/schedule": "^3.0.4",
     "@nestjs/sequelize": "^10.0.0",
-    "@nestjs/swagger": "^7.1.13",
+    "@nestjs/swagger": "^7.1.14",
     "@nestjs/typeorm": "^10.0.0",
     "@ttshivers/automapper-classes": "^8.8.3",
     "@ttshivers/automapper-core": "^8.8.3",

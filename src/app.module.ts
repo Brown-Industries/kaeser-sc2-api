@@ -7,18 +7,15 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from 'nestjs-pino';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthzModule } from './core/authz/authz.module';
 import { TaskModule } from './core/task/task.module';
-import { MatrixConnectModule } from './modules/matrix-connect/matrix-connect.module';
-import { JobbossConnectModule } from './modules/jobboss-connect/jobboss-connect.module';
-import { BPMModule } from './modules/bpm/bpm.module';
 import { MqttModule } from './core/mqtt/mqtt.module';
+import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: 'config/jobboss_matrix.env',
+      envFilePath: 'config/kaeser_sc2.env',
     }),
     LoggerModule.forRoot({
       pinoHttp: {
@@ -38,12 +35,9 @@ import { MqttModule } from './core/mqtt/mqtt.module';
     AutomapperModule.forRoot({
       strategyInitializer: classes(),
     }),
-    AuthzModule,
     TaskModule,
-    MatrixConnectModule,
-    JobbossConnectModule,
+    MaintenanceModule,
     MqttModule,
-    BPMModule,
   ],
   controllers: [AppController],
   providers: [AppService],
