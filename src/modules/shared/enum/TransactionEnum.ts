@@ -1,0 +1,36 @@
+export enum TransactionRelations {
+  Detail = 'detail',
+  JobOperationDetail = 'detail.jobOperation',
+  JobDetail = 'detail.jobOperation.job',
+}
+
+export enum TransactionStatus {
+  OPEN = 0,
+  DEFERRED = 1,
+  ERROR = 2,
+  PROCESSED = 3,
+}
+
+export enum TransactionType {
+  PO_RECEIVING = 1,
+  JOB_MATERIAL_RECEIVING = 2,
+  JOB_SERVICE_RECEIVING = 3,
+  MATERIAL_ADJUSTMENT = 4,
+  PICK_BY_REQUIREMENT_KEY = 5,
+  JOB_TRANSFER = 6,
+  LOCATION_TRANSFER = 7,
+  PICK_SALES_ORDER = 8,
+  ELAPSED_TIME_BY_OP = 9,
+  OPERATION_START = 10, //ONGOING TRANSACTION
+  JOB_OPERATION_STOP = 11,
+  JOB_START = 12, //ONGOING TRANSACTION
+  JOB_TIME_REVIEW = 14,
+  EMPLOYEE_CLOCK_IN = 15,
+  EMPLOYEE_CLOCK_OUT = 16,
+  JOB_TIME_EDIT = 17,
+  PICK_BY_JOB = 18,
+  ELAPSED_TIME_BY_JOB = 19,
+  ROUTING_GROUP_START = 20, //ONGOING TRANSACTION
+  ROUTING_GROUP_STOP = 21,
+  NON_CONFORMANCE_TIME = 22,
+}
