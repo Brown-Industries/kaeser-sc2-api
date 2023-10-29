@@ -1,10 +1,12 @@
 export class Cookie {
+  activeSession: boolean;
   sessionId: string;
   sessionKey: string;
   accessRights: string;
   accessLevel: string;
 
   constructor(cookieHeader?: string[]) {
+    this.activeSession = false;
     this.sessionId = '';
     this.sessionKey = '';
     this.accessRights = '';
