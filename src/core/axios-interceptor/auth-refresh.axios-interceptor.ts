@@ -2,8 +2,6 @@
 import {
   AxiosFulfilledInterceptor,
   AxiosInterceptor,
-  AxiosRejectedInterceptor,
-  AxiosResponseCustomConfig,
 } from '@narando/nest-axios-interceptor';
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
@@ -44,7 +42,11 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
     return error.response && error.response.status === 401;
   }
 
-  async refreshSession(level: number): Promise<boolean> {
+  private isLoginEndpoint(url: string): boolean {
+    return url.includes('/login.html');
+  }
+
+  async refreshSession(level: number = 0): Promise<boolean> {
     // Make this recursivly try to get the proper session id/key.
     // If it fails more than X times then throw an error.
 
@@ -70,6 +72,10 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
     passwordHash = sha256Hash(this.ha1 + ':' + this.sessionKey);
     this.sessionAuth = passwordHash;
 
+    if (this.sessionId == '0' || this.sessionKey == '') {
+      this.refreshSession(level + 1);
+    }
+
     return true;
   }
 
@@ -93,6 +99,9 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
 
   requestFulfilled(): AxiosFulfilledInterceptor<InternalAxiosRequestConfig> {
     console.log('Intercepting request');
+    if (this.sessionId == '0' || this.sessionKey == '') {
+      this.refreshSession();
+    }
     return (config) => {
       config.headers['Connection'] = 'keep-alive';
       config.headers['Content-Type'] = 'application/json';
@@ -120,6 +129,10 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
 
   responseFulfilled(): AxiosFulfilledInterceptor<AxiosResponse> {
     return async (response) => {
+      if (this.isLoginEndpoint(response.config.url)) {
+        // Bypass interceptor for login endpoint
+        return response;
+      }
       if (this.needsSessionRefresh(response)) {
         try {
           const result = await this.refreshSession();
@@ -135,9 +148,13 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
 
   private needsSessionRefresh(response: AxiosResponse): boolean {
     const payloadCheck = response.data['2'];
-    const [sId, sKey] = this.saveCookie(response);
+    if (payloadCheck != '') {
+      return false;
+    }
 
-    if ((sId != '0' && sKey != '') || payloadCheck != '') {
+    const [sId, sKey] = this.extractCookie(response);
+
+    if (sId != '0' && sKey != '') {
       return false;
     }
 
