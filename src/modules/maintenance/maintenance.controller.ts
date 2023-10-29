@@ -11,4 +11,19 @@ export class MaintenanceController {
   getVersion() {
     return this.maintenanceService.getVersion();
   }
+
+  @Get('general')
+  getGeneral() {
+    return this.maintenanceService.getGeneral();
+  }
+
+  @Get('messages')
+  getMessages() {
+    return this.maintenanceService.getMessages();
+  }
+
+  @Get('leds')
+  getLeds() {
+    return this.maintenanceService.getLeds();
+  }
 }
