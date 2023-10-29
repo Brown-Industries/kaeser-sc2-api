@@ -7,6 +7,11 @@ import { MaintenanceService } from './maintenance.service';
 export class MaintenanceController {
   constructor(private readonly maintenanceService: MaintenanceService) {}
 
+  @Get('logout')
+  sessionLogout() {
+    return this.maintenanceService.sessionLogout();
+  }
+
   @Get('version')
   getVersion() {
     return this.maintenanceService.getVersion();

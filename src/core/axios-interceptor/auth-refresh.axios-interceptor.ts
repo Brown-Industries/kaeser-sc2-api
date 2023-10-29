@@ -6,6 +6,8 @@ import {
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { firstValueFrom } from 'rxjs';
+import { Cookie } from 'src/modules/shared/Cookie';
 
 @Injectable()
 export class AuthRefreshInterceptor extends AxiosInterceptor {
@@ -13,8 +15,7 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
   private COMP_USERNAME = '';
   private COMP_PASSWORD = '';
 
-  private sessionKey: string;
-  private sessionId: string;
+  private sessionCookie: Cookie;
   private sessionAuth: string;
 
   private ha1: string;
@@ -33,75 +34,70 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
       this.COMP_USERNAME + ':user@sc2:' + this.COMP_PASSWORD,
     );
 
+    this.sessionCookie = new Cookie();
     this.sessionAuth = '';
-    this.sessionId = '0';
-    this.sessionKey = '';
-  }
-
-  private isUnauthorizedError(error: any): boolean {
-    return error.response && error.response.status === 401;
   }
 
   private isLoginEndpoint(url: string): boolean {
     return url.includes('/login.html');
   }
 
-  async refreshSession(level: number = 0): Promise<boolean> {
+  async refreshSession(
+    level: number = 0,
+    cookie: Cookie = new Cookie(),
+    sessAuth: string = '',
+  ): Promise<boolean> {
     // Make this recursivly try to get the proper session id/key.
     // If it fails more than X times then throw an error.
 
-    let passwordHash = sha256Hash(this.ha1 + ':' + this.sessionKey);
-    this.sessionAuth = passwordHash;
+    const passwordHash = sha256Hash(this.ha1 + ':' + cookie.sessionKey);
+    const sAuth = passwordHash;
+
+    // if (cookie.sessionId.length > 1) {
+    //   this.sessionAuth = sAuth;
+    //   this.sessionCookie = cookie;
+    //   return true;
+    // }
 
     const jwtOptions = {
       method: 'GET',
       url: this.COMP_ADDRESS + '/login.html?0.1976197619761976',
       headers: {
         Username: this.COMP_USERNAME,
-        'Session-Auth': this.sessionAuth,
-        Cookie: `Unit_Time=2; Unit_Date=2; Unit_VolBufferVolume=2; Unit_VolDeliveryQuantity=1; Unit_DeliveryQuantity=1; Unit_Temperature=2; Unit_Pressure=3; Language=en_US; AccessRights=1; AccessLevel=2; Session-Id=${this.sessionId}; Session-Key=${this.sessionKey}`,
+        'Session-Auth': sAuth,
+        Cookie: `Unit_Time=2; Unit_Date=2; Unit_VolBufferVolume=2; Unit_VolDeliveryQuantity=1; Unit_DeliveryQuantity=1; Unit_Temperature=2; Unit_Pressure=3; Language=en_US; AccessRights=1; AccessLevel=2; Session-Id=${cookie.sessionId}; Session-Key=${cookie.sessionKey}`,
       },
     };
 
-    const resp = await this.httpService
-      .get(jwtOptions.url, { headers: jwtOptions.headers })
-      .toPromise();
+    const response$ = await this.httpService.get(jwtOptions.url, {
+      headers: jwtOptions.headers,
+    });
+    const resp = await firstValueFrom(response$);
 
-    [this.sessionId, this.sessionKey] = this.extractCookie(resp);
+    // const resp = await this.httpService
+    //   .get(jwtOptions.url, { headers: jwtOptions.headers })
+    //   .toPromise();
 
-    passwordHash = sha256Hash(this.ha1 + ':' + this.sessionKey);
-    this.sessionAuth = passwordHash;
+    const newCookie = new Cookie(resp.headers['set-cookie']);
 
-    if (this.sessionId == '0' || this.sessionKey == '') {
-      this.refreshSession(level + 1);
+    if (newCookie.sessionId.length <= 1) {
+      this.refreshSession(level++, newCookie, sessAuth);
+    } else {
+      this.sessionCookie = newCookie;
+      this.sessionAuth = sha256Hash(this.ha1 + ':' + newCookie.sessionKey);
     }
+
+    // passwordHash = sha256Hash(this.ha1 + ':' + cookie.sessionKey);
+    // sAuth = passwordHash;
 
     return true;
   }
 
-  extractCookie(response: AxiosResponse) {
-    const setCookieHeader = response.headers['set-cookie'];
-    if (setCookieHeader) {
-      const sessionIdCookie = setCookieHeader.find((cookie) =>
-        cookie.startsWith('Session-Id='),
-      );
-      const sId = sessionIdCookie.split(';')[0].split('=')[1];
-
-      const sessionKeyCookie = setCookieHeader.find((cookie) =>
-        cookie.startsWith('Session-Key='),
-      );
-      const sKey = sessionKeyCookie.split(';')[0].split('=')[1];
-
-      return [sId, sKey];
-    }
-    return ['0', ''];
-  }
-
   requestFulfilled(): AxiosFulfilledInterceptor<InternalAxiosRequestConfig> {
     console.log('Intercepting request');
-    if (this.sessionId == '0' || this.sessionKey == '') {
-      this.refreshSession();
-    }
+    // if (this.sessionCookie.sessionId.length <= 1) {
+    //   this.refreshSession();
+    // }
     return (config) => {
       config.headers['Connection'] = 'keep-alive';
       config.headers['Content-Type'] = 'application/json';
@@ -117,10 +113,10 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
       ] = `Unit_Time=2; Unit_Date=2; Unit_VolBufferVolume=2; Unit_VolDeliveryQuantity=1; Unit_DeliveryQuantity=1; Unit_Temperature=2; Unit_Pressure=3; Language=en_US; ${
         config.headers['Cookie'] || ''
       }`;
-      if (this.sessionId) {
-        config.headers['Cookie'] = `Session-Id=${this.sessionId}; ${
-          config.headers['Cookie'] || ''
-        }`;
+      if (this.sessionCookie.sessionId) {
+        config.headers['Cookie'] = `Session-Id=${
+          this.sessionCookie.sessionId
+        }; ${config.headers['Cookie'] || ''}`;
       }
 
       return config;
@@ -129,15 +125,22 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
 
   responseFulfilled(): AxiosFulfilledInterceptor<AxiosResponse> {
     return async (response) => {
-      if (this.isLoginEndpoint(response.config.url)) {
+      console.log(response.config.url);
+      // console.log(response.config.headers['Cookie']);
+      if (
+        this.isLoginEndpoint(response.config.url) ||
+        (response.data[0] == 8 && response.data[1] == 1)
+      ) {
         // Bypass interceptor for login endpoint
         return response;
       }
       if (this.needsSessionRefresh(response)) {
+        console.log('Refreshing session');
         try {
-          const result = await this.refreshSession();
-          console.log(response.config);
-          return this.httpService.request(response.config).toPromise();
+          await this.refreshSession();
+          const response$ = this.httpService.request(response.config);
+          return firstValueFrom(response$);
+          // return this.httpService.request(response.config).toPromise();
         } catch (err) {
           throw new UnauthorizedException();
         }
@@ -152,11 +155,18 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
       return false;
     }
 
-    const [sId, sKey] = this.extractCookie(response);
-
-    if (sId != '0' && sKey != '') {
-      return false;
+    const cookie = new Cookie(response.headers['set-cookie']);
+    console.log(cookie);
+    if (cookie.sessionId.length <= 1) {
+      return true;
     }
+
+    // const [sId, sKey] = this.extractCookie(response);
+    // this.updateCookie(response);
+
+    // if (sId != '0' && sKey != '') {
+    //   return false;
+    // }
 
     return true;
   }

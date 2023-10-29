@@ -1,5 +1,6 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
+import e from 'express';
 import { firstValueFrom } from 'rxjs';
 
 @Injectable()
@@ -8,14 +9,28 @@ export class MaintenanceService {
 
   private DATA_PATH = '/json.json';
 
-  async getVersion() {
+  async sessionLogout() {
     const payload = {
-      0: 1,
-      1: 7,
+      0: 8,
+      1: 1,
     };
     const response$ = await this.httpService.post(this.DATA_PATH, payload);
     const response = await firstValueFrom(response$);
     return response.data;
+  }
+
+  async getVersion() {
+    try {
+      const payload = {
+        0: 1,
+        1: 7,
+      };
+      const response$ = await this.httpService.post(this.DATA_PATH, payload);
+      const response = await firstValueFrom(response$);
+      return response.data;
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   async getGeneral() {
