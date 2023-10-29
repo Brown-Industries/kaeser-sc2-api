@@ -123,8 +123,6 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
       }
       if (response.data[0] == 8 && response.data[1] == 1) {
         console.log('Session Logout Event');
-        // this.sessionCookie = new Cookie();
-        // this.sessionAuth = '';
         return await response;
       }
       if (this.needsSessionRefresh(response)) {

@@ -1,11 +1,21 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { MaintenanceService } from './maintenance.service';
+import { MaintenanceQueryAllDTO } from './dto/maintenance.query.all.dto';
 
 @ApiTags('Maintenance')
 @Controller('maintenance')
 export class MaintenanceController {
   constructor(private readonly maintenanceService: MaintenanceService) {}
+
+  @Get()
+  getData(@Query() queryDto?: MaintenanceQueryAllDTO) {
+    return this.maintenanceService.getData(queryDto);
+  }
+  @Get('temp')
+  temp(@Query() queryDto?: MaintenanceQueryAllDTO) {
+    return this.maintenanceService.getMaintenceTimers();
+  }
 
   @Get('logout')
   sessionLogout() {
@@ -27,8 +37,8 @@ export class MaintenanceController {
     return this.maintenanceService.getMessages();
   }
 
-  @Get('leds')
-  getLeds() {
-    return this.maintenanceService.getLeds();
+  @Get('quick-status')
+  getQuickStatus() {
+    return this.maintenanceService.getQuickStatus();
   }
 }
