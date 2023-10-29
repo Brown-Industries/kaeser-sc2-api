@@ -42,22 +42,23 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
     return url.includes('/login.html');
   }
 
-  async refreshSession(
-    level: number = 0,
-    cookie: Cookie = new Cookie(),
-    sessAuth: string = '',
-  ): Promise<boolean> {
-    // Make this recursivly try to get the proper session id/key.
-    // If it fails more than X times then throw an error.
+  private needsSessionRefresh(response: AxiosResponse): boolean {
+    const payloadCheck = response.data['2'];
+    if (payloadCheck != '') {
+      return false;
+    }
+    const cookie = new Cookie(response.headers['set-cookie']);
+    if (cookie.sessionId.length > 1) {
+      return false;
+    }
 
-    const passwordHash = sha256Hash(this.ha1 + ':' + cookie.sessionKey);
-    const sAuth = passwordHash;
+    this.sessionAuth = '';
+    this.sessionCookie = cookie;
+    return true;
+  }
 
-    // if (cookie.sessionId.length > 1) {
-    //   this.sessionAuth = sAuth;
-    //   this.sessionCookie = cookie;
-    //   return true;
-    // }
+  async refreshSession(cookie: Cookie = new Cookie()): Promise<Cookie> {
+    const sAuth = sha256Hash(this.ha1 + ':' + cookie.sessionKey);
 
     const jwtOptions = {
       method: 'GET',
@@ -65,7 +66,7 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
       headers: {
         Username: this.COMP_USERNAME,
         'Session-Auth': sAuth,
-        Cookie: `Unit_Time=2; Unit_Date=2; Unit_VolBufferVolume=2; Unit_VolDeliveryQuantity=1; Unit_DeliveryQuantity=1; Unit_Temperature=2; Unit_Pressure=3; Language=en_US; AccessRights=1; AccessLevel=2; Session-Id=${cookie.sessionId}; Session-Key=${cookie.sessionKey}`,
+        Cookie: `Unit_Time=2; Unit_Date=2; Unit_VolBufferVolume=2; Unit_VolDeliveryQuantity=1; Unit_DeliveryQuantity=1; Unit_Temperature=2; Unit_Pressure=3; Language=en_US; AccessRights=1; AccessLevel=2; Session-Id=${cookie.sessionId}; Session-Key=${cookie.sessionKey};`,
       },
     };
 
@@ -74,34 +75,29 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
     });
     const resp = await firstValueFrom(response$);
 
-    // const resp = await this.httpService
-    //   .get(jwtOptions.url, { headers: jwtOptions.headers })
-    //   .toPromise();
-
     const newCookie = new Cookie(resp.headers['set-cookie']);
 
     if (newCookie.sessionId.length <= 1) {
-      this.refreshSession(level++, newCookie, sessAuth);
+      return newCookie;
     } else {
+      newCookie.activeSession = true;
+
       this.sessionCookie = newCookie;
       this.sessionAuth = sha256Hash(this.ha1 + ':' + newCookie.sessionKey);
+      return newCookie;
     }
-
-    // passwordHash = sha256Hash(this.ha1 + ':' + cookie.sessionKey);
-    // sAuth = passwordHash;
-
-    return true;
   }
 
   requestFulfilled(): AxiosFulfilledInterceptor<InternalAxiosRequestConfig> {
-    console.log('Intercepting request');
-    // if (this.sessionCookie.sessionId.length <= 1) {
-    //   this.refreshSession();
-    // }
     return (config) => {
+      // console.log('request:' + config.url);
       config.headers['Connection'] = 'keep-alive';
       config.headers['Content-Type'] = 'application/json';
       config.headers['Cache-Control'] = 'max-age=0';
+
+      if (this.isLoginEndpoint(config.url)) {
+        return config;
+      }
 
       // If you have session information, add it to the request
       if (this.sessionAuth) {
@@ -118,57 +114,45 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
           this.sessionCookie.sessionId
         }; ${config.headers['Cookie'] || ''}`;
       }
-
       return config;
     };
   }
 
   responseFulfilled(): AxiosFulfilledInterceptor<AxiosResponse> {
     return async (response) => {
-      console.log(response.config.url);
-      // console.log(response.config.headers['Cookie']);
-      if (
-        this.isLoginEndpoint(response.config.url) ||
-        (response.data[0] == 8 && response.data[1] == 1)
-      ) {
+      // console.log('response:' + response.config.url);
+      if (this.isLoginEndpoint(response.config.url)) {
         // Bypass interceptor for login endpoint
-        return response;
+        return await response;
+      }
+      if (response.data[0] == 8 && response.data[1] == 1) {
+        console.log('Session Logout Event');
+        this.sessionCookie = new Cookie();
+        this.sessionAuth = '';
+        return await response;
       }
       if (this.needsSessionRefresh(response)) {
         console.log('Refreshing session');
         try {
-          await this.refreshSession();
-          const response$ = this.httpService.request(response.config);
-          return firstValueFrom(response$);
-          // return this.httpService.request(response.config).toPromise();
+          let tempCookie = new Cookie();
+          for (let i = 0; i < 10; i++) {
+            tempCookie = await this.refreshSession(tempCookie);
+            if (tempCookie.activeSession) {
+              break;
+            }
+          }
+          if (!this.sessionCookie.activeSession) {
+            console.log('Session refresh failed');
+            throw new UnauthorizedException();
+          }
+          const response$ = await this.httpService.request(response.config);
+          return await firstValueFrom(response$);
         } catch (err) {
           throw new UnauthorizedException();
         }
       }
-      return response;
+      return await response;
     };
-  }
-
-  private needsSessionRefresh(response: AxiosResponse): boolean {
-    const payloadCheck = response.data['2'];
-    if (payloadCheck != '') {
-      return false;
-    }
-
-    const cookie = new Cookie(response.headers['set-cookie']);
-    console.log(cookie);
-    if (cookie.sessionId.length <= 1) {
-      return true;
-    }
-
-    // const [sId, sKey] = this.extractCookie(response);
-    // this.updateCookie(response);
-
-    // if (sId != '0' && sKey != '') {
-    //   return false;
-    // }
-
-    return true;
   }
 }
 
