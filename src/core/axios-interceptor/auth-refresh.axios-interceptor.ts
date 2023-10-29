@@ -25,6 +25,7 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
     @Inject('CONFIG_VALUES') private configValues: any,
   ) {
     super(httpService);
+    console.log('AuthRefreshInterceptor constructor');
 
     this.COMP_ADDRESS = configValues.COMP_ADDRESS;
     this.COMP_USERNAME = configValues.COMP_USERNAME;
@@ -52,8 +53,8 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
       return false;
     }
 
-    this.sessionAuth = '';
-    this.sessionCookie = cookie;
+    // this.sessionAuth = '';
+    // this.sessionCookie = cookie;
     return true;
   }
 
@@ -81,9 +82,6 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
       return newCookie;
     } else {
       newCookie.activeSession = true;
-
-      this.sessionCookie = newCookie;
-      this.sessionAuth = sha256Hash(this.ha1 + ':' + newCookie.sessionKey);
       return newCookie;
     }
   }
@@ -106,9 +104,7 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
 
       config.headers[
         'Cookie'
-      ] = `Unit_Time=2; Unit_Date=2; Unit_VolBufferVolume=2; Unit_VolDeliveryQuantity=1; Unit_DeliveryQuantity=1; Unit_Temperature=2; Unit_Pressure=3; Language=en_US; ${
-        config.headers['Cookie'] || ''
-      }`;
+      ] = `Unit_Time=2; Unit_Date=2; Unit_VolBufferVolume=2; Unit_VolDeliveryQuantity=1; Unit_DeliveryQuantity=1; Unit_Temperature=2; Unit_Pressure=3; Language=en_US; `;
       if (this.sessionCookie.sessionId) {
         config.headers['Cookie'] = `Session-Id=${
           this.sessionCookie.sessionId
@@ -127,8 +123,8 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
       }
       if (response.data[0] == 8 && response.data[1] == 1) {
         console.log('Session Logout Event');
-        this.sessionCookie = new Cookie();
-        this.sessionAuth = '';
+        // this.sessionCookie = new Cookie();
+        // this.sessionAuth = '';
         return await response;
       }
       if (this.needsSessionRefresh(response)) {
@@ -138,6 +134,10 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
           for (let i = 0; i < 10; i++) {
             tempCookie = await this.refreshSession(tempCookie);
             if (tempCookie.activeSession) {
+              this.sessionCookie = tempCookie;
+              this.sessionAuth = sha256Hash(
+                this.ha1 + ':' + tempCookie.sessionKey,
+              );
               break;
             }
           }
