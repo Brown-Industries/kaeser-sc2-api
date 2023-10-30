@@ -12,10 +12,6 @@ export class MaintenanceController {
   getData(@Query() queryDto?: MaintenanceQueryAllDTO) {
     return this.maintenanceService.getData(queryDto);
   }
-  @Get('temp')
-  temp(@Query() queryDto?: MaintenanceQueryAllDTO) {
-    return this.maintenanceService.getMaintenceTimers();
-  }
 
   @Get('logout')
   sessionLogout() {
@@ -32,13 +28,18 @@ export class MaintenanceController {
     return this.maintenanceService.getGeneral();
   }
 
-  @Get('messages')
-  getMessages() {
-    return this.maintenanceService.getMessages();
+  @Get('maintenance-timers')
+  async getMaintenanceTimers() {
+    return (await this.maintenanceService.getMaintenanceTimers()).toObj();
   }
 
-  @Get('quick-status')
+  @Get('messages')
+  async getMessages() {
+    return (await this.maintenanceService.getMessages()).toObj();
+  }
+
+  @Get('led-data')
   getQuickStatus() {
-    return this.maintenanceService.getQuickStatus();
+    return this.maintenanceService.getLedData();
   }
 }
