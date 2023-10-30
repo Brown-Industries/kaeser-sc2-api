@@ -38,7 +38,7 @@ export class MaintenanceService {
         result['messages'] = d;
       }
       if (data.includes(CompressorData.Maintenance)) {
-        const d = (await this.getMaintenceTimers()).toObj();
+        const d = (await this.getMaintenanceTimers()).toObj();
         result['maintence'] = d;
       }
       if (data.includes(CompressorData.OperatingHours)) {
@@ -79,7 +79,10 @@ export class MaintenanceService {
       '0': 1,
       '1': 2,
       '2': {
-        '0': [3163824, 4082904, 4057536],
+        '0': [
+          4049696, 3231568, 4082904, 4057536, 3233600, 3236248, 3240368,
+          3200672, 3200752,
+        ],
       },
     };
 
@@ -107,7 +110,7 @@ export class MaintenanceService {
     return response.data;
   }
 
-  async getMaintenceTimers(): Promise<MaintenanceTimerDto> {
+  async getMaintenanceTimers(): Promise<MaintenanceTimerDto> {
     const payload = {
       '0': 1,
       '1': 2,
@@ -179,7 +182,7 @@ export class MaintenanceService {
     return dto;
   }
 
-  async getQuickStatus() {
+  async getLedData() {
     const payload = {
       0: 1,
       1: 4,

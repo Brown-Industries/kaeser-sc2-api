@@ -1,60 +1,60 @@
 export class MaintenanceTimerDto {
   oilFilterInterval: number; //3274104
-  oilFilterCurrent: number; //3274264
+  oilFilterDueIn: number; //3274264
 
   oilSeperatorInterval: number; //3275128
-  oilSeperatorCurrent: number; //3275288
+  oilSeperatorDueIn: number; //3275288
 
   oilChangeInterval: number; //3276152
-  oilChangeCurrent: number; //3276312
+  oilChangeDueIn: number; //3276312
 
   airFilterInterval: number; //3277176
-  airFilterCurrent: number; //3277336
+  airFilterDueIn: number; //3277336
 
   valveInspectionInterval: number; //3278200
-  valveInspectionCurrent: number; //3278360
+  valveInspectionDueIn: number; //3278360
 
   beltCouplingInterval: number; //3279224
-  beltCouplingCurrent: number; //3279384
+  beltCouplingDueIn: number; //3279384
 
   compMotorBearingLubeInterval: number; //3280480
-  compMotorBearingLubeCurrent: number; //3280640
+  compMotorBearingLubeDueIn: number; //3280640
 
   bearingChangeInterval: number; //3281272
-  bearingChangeCurrent: number; //3281432
+  bearingChangeDueIn: number; //3281432
 
   fanMotorBearingInterval: number; //3283320
-  fanMotorBearingCurrent: number; //3283480
+  fanMotorBearingDueIn: number; //3283480
 
   annualMaintenanceDue: Date; //3285368
 
   constructor(data: any) {
     this.oilFilterInterval = this.extractHourValue(data, 3274104);
-    this.oilFilterCurrent = this.extractHourValue(data, 3274264);
+    this.oilFilterDueIn = this.extractHourValue(data, 3274264);
 
     this.oilSeperatorInterval = this.extractHourValue(data, 3275128);
-    this.oilSeperatorCurrent = this.extractHourValue(data, 3275288);
+    this.oilSeperatorDueIn = this.extractHourValue(data, 3275288);
 
     this.oilChangeInterval = this.extractHourValue(data, 3276152);
-    this.oilChangeCurrent = this.extractHourValue(data, 3276312);
+    this.oilChangeDueIn = this.extractHourValue(data, 3276312);
 
     this.airFilterInterval = this.extractHourValue(data, 3277176);
-    this.airFilterCurrent = this.extractHourValue(data, 3277336);
+    this.airFilterDueIn = this.extractHourValue(data, 3277336);
 
     this.valveInspectionInterval = this.extractHourValue(data, 3278200);
-    this.valveInspectionCurrent = this.extractHourValue(data, 3278360);
+    this.valveInspectionDueIn = this.extractHourValue(data, 3278360);
 
     this.beltCouplingInterval = this.extractHourValue(data, 3279224);
-    this.beltCouplingCurrent = this.extractHourValue(data, 3279384);
+    this.beltCouplingDueIn = this.extractHourValue(data, 3279384);
 
     this.compMotorBearingLubeInterval = this.extractHourValue(data, 3280480);
-    this.compMotorBearingLubeCurrent = this.extractHourValue(data, 3280640);
+    this.compMotorBearingLubeDueIn = this.extractHourValue(data, 3280640);
 
     this.bearingChangeInterval = this.extractHourValue(data, 3281272);
-    this.bearingChangeCurrent = this.extractHourValue(data, 3281432);
+    this.bearingChangeDueIn = this.extractHourValue(data, 3281432);
 
     this.fanMotorBearingInterval = this.extractHourValue(data, 3283320);
-    this.fanMotorBearingCurrent = this.extractHourValue(data, 3283480);
+    this.fanMotorBearingDueIn = this.extractHourValue(data, 3283480);
 
     this.annualMaintenanceDue = this.extractDate(data, 3285368);
   }
@@ -95,39 +95,39 @@ export class MaintenanceTimerDto {
   toObj() {
     return {
       oilFilter: {
-        current: this.oilFilterCurrent,
+        dueIn: this.oilFilterDueIn,
         interval: this.oilFilterInterval,
       },
       oilSeperator: {
-        current: this.oilSeperatorCurrent,
+        dueIn: this.oilSeperatorDueIn,
         interval: this.oilSeperatorInterval,
       },
       oilChange: {
-        current: this.oilChangeCurrent,
+        dueIn: this.oilChangeDueIn,
         interval: this.oilChangeInterval,
       },
       airFilter: {
-        current: this.airFilterCurrent,
+        dueIn: this.airFilterDueIn,
         interval: this.airFilterInterval,
       },
       valveInspection: {
-        current: this.valveInspectionCurrent,
+        dueIn: this.valveInspectionDueIn,
         interval: this.valveInspectionInterval,
       },
       beltCoupling: {
-        current: this.beltCouplingCurrent,
+        dueIn: this.beltCouplingDueIn,
         interval: this.beltCouplingInterval,
       },
       compMotorBearingLube: {
-        current: this.compMotorBearingLubeCurrent,
+        dueIn: this.compMotorBearingLubeDueIn,
         interval: this.compMotorBearingLubeInterval,
       },
       bearingChange: {
-        current: this.bearingChangeCurrent,
+        dueIn: this.bearingChangeDueIn,
         interval: this.bearingChangeInterval,
       },
       fanMotorBearing: {
-        current: this.fanMotorBearingCurrent,
+        dueIn: this.fanMotorBearingDueIn,
         interval: this.fanMotorBearingInterval,
       },
       annualMaintenanceDue: this.annualMaintenanceDue,

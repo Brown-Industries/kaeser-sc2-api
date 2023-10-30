@@ -1,6 +1,6 @@
 {
   "name": "kaeser-sc2-api",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Kaeser Sigma Control 2 API",
   "author": "Paul Sites <paul@brownindustries.com>",
   "private": true,
@@ -38,6 +38,7 @@
     "@ttshivers/automapper-classes": "^8.8.3",
     "@ttshivers/automapper-core": "^8.8.3",
     "@ttshivers/automapper-nestjs": "^8.8.3",
+    "agentkeepalive": "^4.5.0",
     "axios": "^1.5.1",
     "cache-manager": "^5.2.3",
     "class-transformer": "^0.5.1",

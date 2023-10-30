@@ -12,6 +12,7 @@ export class MqttService extends EventEmitter {
   private mqttActive;
 
   private mqttClient;
+  private topicRoot;
 
   isActive(): boolean {
     return this.mqttActive;
@@ -23,10 +24,12 @@ export class MqttService extends EventEmitter {
     const user = process.env.MQTT_USER;
     const pass = process.env.MQTT_PASS;
 
-    if (!host || !port || !user || !pass) {
+    if (!host || !port || !user || !pass || !process.env.MQTT_TOPIC_ROOT) {
       this.logger.error('Missing MQTT config. MQTT is disabled.');
       return;
     }
+
+    this.topicRoot = process.env.MQTT_TOPIC_ROOT + '/';
 
     const clientId = `majb_${Math.random().toString(16).slice(3)}`;
 
@@ -40,12 +43,22 @@ export class MqttService extends EventEmitter {
       username: process.env.MQTT_USER,
       password: process.env.MQTT_PASS,
       reconnectPeriod: 1000,
+      will: {
+        topic: this.topicRoot + 'status',
+        payload: Buffer.from(JSON.stringify({ state: 'offline' })),
+        qos: 1,
+        retain: true,
+      },
     });
 
     this.mqttClient.on('connect', () => {
       this.logger.log('Connected to MQTT');
       this.mqttActive = true;
       this.emit('connected');
+      this.mqttClient.publish(
+        this.topicRoot + 'status',
+        Buffer.from(JSON.stringify({ state: 'online' })),
+      );
     });
 
     this.mqttClient.on('error', (error) => {
@@ -75,5 +88,12 @@ export class MqttService extends EventEmitter {
         'Attempted to subscribe while MQTT client is inactive or not initialized.',
       );
     }
+  }
+
+  publish(subTopic: string, payload: string): string {
+    if (!this.mqttActive) return 'MQTT is disabled';
+    const topic = this.topicRoot + subTopic;
+    this.mqttClient.publish(topic, payload, { qos: 1, retain: true });
+    return `Publishing to ${topic}`;
   }
 }
