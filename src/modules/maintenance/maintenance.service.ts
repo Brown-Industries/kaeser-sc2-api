@@ -8,6 +8,8 @@ import { EnumMethods } from '../shared/enum/EnumMethods';
 import { CompressorData } from '../shared/enum/CompressorData';
 import { OperatingHoursDto } from './dto/operating-hours.dto';
 import { IOMDto } from './dto/io-module.dto';
+import { MessagesDto } from './dto/messages.dto';
+import { OperationalDto } from './dto/operational.dto';
 
 @Injectable()
 export class MaintenanceService {
@@ -23,17 +25,25 @@ export class MaintenanceService {
 
       data = data.map((r) => EnumMethods.getValueByKey(CompressorData, r));
 
-      if (data.includes(CompressorData.Maintenance)) {
-        const maintenanceTimers = (await this.getMaintenceTimers()).toObj();
-        result['maintence'] = maintenanceTimers;
-      }
-      if (data.includes(CompressorData.OperatingHours)) {
-        const d = (await this.getOperatingHours()).toObj();
-        result['operatingHours'] = d;
+      if (data.includes(CompressorData.Operational)) {
+        const d = (await this.getOperational()).toObj();
+        result['operational'] = d;
       }
       if (data.includes(CompressorData.IO_Module)) {
         const d = (await this.getIO()).toObj();
         result['iom'] = d;
+      }
+      if (data.includes(CompressorData.Messages)) {
+        const d = (await this.getMessages()).toObj();
+        result['messages'] = d;
+      }
+      if (data.includes(CompressorData.Maintenance)) {
+        const d = (await this.getMaintenceTimers()).toObj();
+        result['maintence'] = d;
+      }
+      if (data.includes(CompressorData.OperatingHours)) {
+        const d = (await this.getOperatingHours()).toObj();
+        result['operatingHours'] = d;
       }
     }
 
@@ -62,6 +72,22 @@ export class MaintenanceService {
     } catch (error) {
       console.log(error);
     }
+  }
+
+  async getOperational(): Promise<OperationalDto> {
+    const payload = {
+      '0': 1,
+      '1': 2,
+      '2': {
+        '0': [3163824, 4082904, 4057536],
+      },
+    };
+
+    const response$ = await this.httpService.post(this.DATA_PATH, payload);
+    const response = await firstValueFrom(response$);
+
+    const dto = new OperationalDto(response.data);
+    return dto;
   }
 
   async getGeneral() {
@@ -135,7 +161,7 @@ export class MaintenanceService {
     return dto;
   }
 
-  async getMessages() {
+  async getMessages(): Promise<MessagesDto> {
     const payload = {
       '0': 3,
       '1': 1,
@@ -148,7 +174,9 @@ export class MaintenanceService {
 
     const response$ = await this.httpService.post(this.DATA_PATH, payload);
     const response = await firstValueFrom(response$);
-    return response.data;
+
+    const dto = new MessagesDto(response.data);
+    return dto;
   }
 
   async getQuickStatus() {

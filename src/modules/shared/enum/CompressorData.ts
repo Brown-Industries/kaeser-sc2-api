@@ -1,7 +1,9 @@
 export enum CompressorData {
+  Operational = 'operational',
   Maintenance = 'maintenance',
   OperatingHours = 'operatingHours',
   IO_Module = 'ioModule',
+  Messages = 'messages',
 }
 
 export enum MaintenceTimerData {
