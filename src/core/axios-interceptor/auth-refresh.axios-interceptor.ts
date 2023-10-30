@@ -25,7 +25,6 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
     @Inject('CONFIG_VALUES') private configValues: any,
   ) {
     super(httpService);
-    console.log('AuthRefreshInterceptor constructor');
 
     this.COMP_ADDRESS = configValues.COMP_ADDRESS;
     this.COMP_USERNAME = configValues.COMP_USERNAME;
@@ -70,28 +69,31 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
         Cookie: `Unit_Time=2; Unit_Date=2; Unit_VolBufferVolume=2; Unit_VolDeliveryQuantity=1; Unit_DeliveryQuantity=1; Unit_Temperature=2; Unit_Pressure=3; Language=en_US; AccessRights=1; AccessLevel=2; Session-Id=${cookie.sessionId}; Session-Key=${cookie.sessionKey};`,
       },
     };
+    try {
+      const response$ = await this.httpService.get(jwtOptions.url, {
+        headers: jwtOptions.headers,
+      });
+      const resp = await firstValueFrom(response$);
 
-    const response$ = await this.httpService.get(jwtOptions.url, {
-      headers: jwtOptions.headers,
-    });
-    const resp = await firstValueFrom(response$);
+      const newCookie = new Cookie(resp.headers['set-cookie']);
 
-    const newCookie = new Cookie(resp.headers['set-cookie']);
-
-    if (newCookie.sessionId.length <= 1) {
-      return newCookie;
-    } else {
-      newCookie.activeSession = true;
-      return newCookie;
+      if (newCookie.sessionId.length <= 1) {
+        return newCookie;
+      } else {
+        newCookie.activeSession = true;
+        return newCookie;
+      }
+    } catch (err) {
+      console.log('REFRESH ERROR');
     }
   }
 
   requestFulfilled(): AxiosFulfilledInterceptor<InternalAxiosRequestConfig> {
     return (config) => {
       // console.log('request:' + config.url);
-      config.headers['Connection'] = 'keep-alive';
+      // config.headers['Connection'] = 'keep-alive';
+      // config.headers['Cache-Control'] = 'max-age=0';
       config.headers['Content-Type'] = 'application/json';
-      config.headers['Cache-Control'] = 'max-age=0';
 
       if (this.isLoginEndpoint(config.url)) {
         return config;
@@ -126,7 +128,7 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
         return await response;
       }
       if (this.needsSessionRefresh(response)) {
-        console.log('Refreshing session');
+        // console.log('Refreshing session');
         try {
           let tempCookie = new Cookie();
           for (let i = 0; i < 10; i++) {
