@@ -17,7 +17,8 @@ export class TaskService {
       if (!this.mqttService.isActive()) return;
 
       const res = (await this.maintenanceService.getOperational()).toObj();
-      this.mqttService.publish(MqttTopic.Operational, JSON.stringify(res));
+      const temp = { 'operational-data': res };
+      this.mqttService.publish(MqttTopic.Operational, JSON.stringify(temp));
     } catch (e) {
       this.mqttService.setStatus(false);
     }
@@ -38,15 +39,19 @@ export class TaskService {
     if (!this.mqttService.isActive()) return;
 
     const m = (await this.maintenanceService.getMaintenanceTimers()).toObj();
-    this.mqttService.publish(MqttTopic.Maintenance, JSON.stringify(m));
+    const tM = { 'maintenance-timers': m };
+    this.mqttService.publish(MqttTopic.Maintenance, JSON.stringify(tM));
 
     const mes = (await this.maintenanceService.getMessages()).toObj();
-    this.mqttService.publish(MqttTopic.Messages, JSON.stringify(mes));
+    const tMes = { messages: mes };
+    this.mqttService.publish(MqttTopic.Messages, JSON.stringify(tMes));
 
     const oh = (await this.maintenanceService.getOperatingHours()).toObj();
-    this.mqttService.publish(MqttTopic.OperatingHours, JSON.stringify(oh));
+    const tOh = { 'operating-hours': oh };
+    this.mqttService.publish(MqttTopic.OperatingHours, JSON.stringify(tOh));
 
     const ld = await this.maintenanceService.getLedData();
-    this.mqttService.publish(MqttTopic.LedData, JSON.stringify(ld));
+    const tLd = { 'led-data': ld };
+    this.mqttService.publish(MqttTopic.LedData, JSON.stringify(tLd));
   }
 }
