@@ -50,6 +50,16 @@ export class MaintenanceService {
     return result;
   }
 
+  async bumpSession() {
+    const payload = {
+      0: 8,
+      1: 4,
+    };
+    const response$ = await this.httpService.post(this.DATA_PATH, payload);
+    const response = await firstValueFrom(response$);
+    return response.data;
+  }
+
   async sessionLogout() {
     const payload = {
       0: 8,
@@ -70,7 +80,7 @@ export class MaintenanceService {
       const response = await firstValueFrom(response$);
       return response.data;
     } catch (error) {
-      console.log(error);
+      return 'Error getting version';
     }
   }
 

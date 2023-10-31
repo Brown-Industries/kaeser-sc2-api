@@ -18,7 +18,8 @@ export class MqttService extends EventEmitter {
     return this.mqttActive;
   }
 
-  onModuleInit() {
+  // onModuleInit() {
+  onApplicationBootstrap() {
     const host = process.env.MQTT_HOST;
     const port = process.env.MQTT_PORT || 1883;
     const user = process.env.MQTT_USER;
@@ -65,6 +66,14 @@ export class MqttService extends EventEmitter {
       this.logger.error(`MQTT error: ${error}`);
       this.mqttActive = false;
     });
+  }
+
+  setStatus(status: boolean) {
+    this.mqttActive = status;
+    this.mqttClient.publish(
+      this.topicRoot + 'status',
+      Buffer.from(JSON.stringify({ state: status ? 'online' : 'offline' })),
+    );
   }
 
   // Method to subscribe to a topic and provide a callback
