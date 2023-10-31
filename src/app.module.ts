@@ -1,6 +1,5 @@
 import { classes } from '@ttshivers/automapper-classes';
 import { AutomapperModule } from '@ttshivers/automapper-nestjs';
-import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -10,6 +9,7 @@ import { AppService } from './app.service';
 import { TaskModule } from './core/task/task.module';
 import { MqttModule } from './core/mqtt/mqtt.module';
 import { MaintenanceModule } from './modules/maintenance/maintenance.module';
+import { WarmupService } from './warmup.service';
 
 @Module({
   imports: [
@@ -30,7 +30,6 @@ import { MaintenanceModule } from './modules/maintenance/maintenance.module';
         },
       },
     }),
-    CacheModule.register({ isGlobal: true }),
     ScheduleModule.forRoot(),
     AutomapperModule.forRoot({
       strategyInitializer: classes(),
@@ -40,6 +39,6 @@ import { MaintenanceModule } from './modules/maintenance/maintenance.module';
     MqttModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, WarmupService],
 })
 export class AppModule {}

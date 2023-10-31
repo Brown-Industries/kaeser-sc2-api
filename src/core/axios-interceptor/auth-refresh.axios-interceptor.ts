@@ -4,9 +4,10 @@ import {
   AxiosInterceptor,
 } from '@narando/nest-axios-interceptor';
 import { HttpService } from '@nestjs/axios';
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import { firstValueFrom } from 'rxjs';
+import { HttpException, Inject, Injectable } from '@nestjs/common';
+import { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { Logger } from 'nestjs-pino';
+import { firstValueFrom, timer } from 'rxjs';
 import { Cookie } from 'src/modules/shared/Cookie';
 
 @Injectable()
@@ -18,13 +19,17 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
   private sessionCookie: Cookie;
   private sessionAuth: string;
 
+  private blockRequests = false;
+
   private ha1: string;
 
   constructor(
     httpService: HttpService,
     @Inject('CONFIG_VALUES') private configValues: any,
+    private readonly logger: Logger,
   ) {
     super(httpService);
+    this.registerGlobalInterceptor();
 
     this.COMP_ADDRESS = configValues.COMP_ADDRESS;
     this.COMP_USERNAME = configValues.COMP_USERNAME;
@@ -36,6 +41,31 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
 
     this.sessionCookie = new Cookie();
     this.sessionAuth = '';
+  }
+
+  private startConnectionBlockingPeriod() {
+    this.blockRequests = true;
+    timer(60000).subscribe(() => {
+      this.blockRequests = false;
+      this.logger.log('Resuming requests.');
+    });
+  }
+
+  private registerGlobalInterceptor() {
+    this.httpService.axiosRef.interceptors.response.use(
+      (response) => response,
+      (error: AxiosError) => {
+        if (error.code === 'ECONNRESET' || error.code === 'ECONNREFUSED') {
+          // Handle ECONNRESET error globally here
+          this.logger.error('Connection Error. Delaying requests');
+          this.startConnectionBlockingPeriod();
+          // You can throw a custom error or do something else here
+          return Promise.reject(new Error('Connection was reset!'));
+        }
+        // If it's not an ECONNRESET error, reject the promise with the original error
+        return Promise.reject(error);
+      },
+    );
   }
 
   private isLoginEndpoint(url: string): boolean {
@@ -84,15 +114,18 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
         return newCookie;
       }
     } catch (err) {
-      console.log('REFRESH ERROR');
+      console.error('Error refreshing session');
     }
   }
 
   requestFulfilled(): AxiosFulfilledInterceptor<InternalAxiosRequestConfig> {
     return (config) => {
-      // console.log('request:' + config.url);
-      // config.headers['Connection'] = 'keep-alive';
-      // config.headers['Cache-Control'] = 'max-age=0';
+      if (this.blockRequests) {
+        throw new HttpException(
+          'Blocking requests until compressor is available. Please try again in 1 minute.',
+          429,
+        );
+      }
       config.headers['Content-Type'] = 'application/json';
 
       if (this.isLoginEndpoint(config.url)) {
@@ -118,17 +151,24 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
 
   responseFulfilled(): AxiosFulfilledInterceptor<AxiosResponse> {
     return async (response) => {
-      // console.log('response:' + response.config.url);
       if (this.isLoginEndpoint(response.config.url)) {
+        response.headers['set-cookie'].forEach((cookie) => {
+          if (cookie.includes('Session-Id')) {
+            const sessionId = cookie.split(';')[0].split('=')[1];
+            if (sessionId == '-1') {
+              this.logger.error('Over Session Limit. Delaying requests.');
+              this.startConnectionBlockingPeriod();
+            }
+          }
+        });
         // Bypass interceptor for login endpoint
         return await response;
       }
       if (response.data[0] == 8 && response.data[1] == 1) {
-        console.log('Session Logout Event');
+        this.logger.log('Session Logout Event');
         return await response;
       }
       if (this.needsSessionRefresh(response)) {
-        // console.log('Refreshing session');
         try {
           let tempCookie = new Cookie();
           for (let i = 0; i < 10; i++) {
@@ -142,13 +182,19 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
             }
           }
           if (!this.sessionCookie.activeSession) {
-            console.log('Session refresh failed');
-            throw new UnauthorizedException();
+            throw new Error('Session refresh failed');
           }
           const response$ = await this.httpService.request(response.config);
           return await firstValueFrom(response$);
         } catch (err) {
-          throw new UnauthorizedException();
+          if (this.blockRequests) {
+            throw new HttpException(
+              'Blocking requests until compressor is available. Please try again in 1 minute.',
+              429,
+            );
+          } else {
+            throw new Error(err);
+          }
         }
       }
       return await response;
