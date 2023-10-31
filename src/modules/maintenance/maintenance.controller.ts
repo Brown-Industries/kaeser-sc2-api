@@ -9,8 +9,9 @@ export class MaintenanceController {
   constructor(private readonly maintenanceService: MaintenanceService) {}
 
   @Get()
-  getData(@Query() queryDto?: MaintenanceQueryAllDTO) {
-    return this.maintenanceService.getData(queryDto);
+  async getData(@Query() queryDto?: MaintenanceQueryAllDTO) {
+    const res = await this.maintenanceService.getData(queryDto);
+    return res;
   }
 
   @Get('logout')
