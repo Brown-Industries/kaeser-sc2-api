@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { MqttService } from '../mqtt/mqtt.service';
-import { MqttTopic } from 'src/modules/shared/enum/Mqtt';
 import { MaintenanceService } from 'src/modules/maintenance/maintenance.service';
+import { MqttTopic } from 'src/modules/shared/enum/Mqtt';
+import { MqttService } from '../mqtt/mqtt.service';
 
 @Injectable()
 export class TaskService {
@@ -13,10 +13,24 @@ export class TaskService {
 
   @Cron(CronExpression.EVERY_SECOND)
   async everySec() {
-    if (!this.mqttService.isActive()) return;
+    try {
+      if (!this.mqttService.isActive()) return;
 
-    const res = (await this.maintenanceService.getOperational()).toObj();
-    this.mqttService.publish(MqttTopic.Operational, JSON.stringify(res));
+      const res = (await this.maintenanceService.getOperational()).toObj();
+      this.mqttService.publish(MqttTopic.Operational, JSON.stringify(res));
+    } catch (e) {
+      this.mqttService.setStatus(false);
+    }
+  }
+
+  @Cron(CronExpression.EVERY_10_SECONDS)
+  async every10Sec() {
+    try {
+      await this.maintenanceService.bumpSession();
+      this.mqttService.setStatus(true);
+    } catch (e) {
+      this.mqttService.setStatus(false);
+    }
   }
 
   @Cron(CronExpression.EVERY_MINUTE)
