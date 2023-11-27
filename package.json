@@ -1,6 +1,6 @@
 {
   "name": "kaeser-sc2-api",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Kaeser Sigma Control 2 API",
   "author": "Paul Sites <paul@brownindustries.com>",
   "private": true,
