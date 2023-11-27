@@ -1,5 +1,6 @@
 export class Message {
   messageType: string;
+  messageId: number;
   messageDate: Date;
   message: string;
 
@@ -8,6 +9,7 @@ export class Message {
     const tempDate = data.ReportDateTime.replace('AM', '')
       .replace('PM', '')
       .trim();
+    this.messageId = data.ReportId;
     this.messageDate = new Date(tempDate);
     this.message = data.Text.replace('\n', '').trim();
   }
