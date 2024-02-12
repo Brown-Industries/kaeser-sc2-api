@@ -28,13 +28,12 @@ jobs:
         id: package-version
         uses: martinbeentjes/npm-get-version-action@v1.3.1
 
-    # -
-    #     name: Login to Docker Container Registry
-    #     uses: docker/login-action@v2
-    #     with:
-    #       registry: ${{ vars.DOCKER_REG_URL }}
-    #       username: ${{ secrets.DOCKER_REG_USERNAME }}
-    #       password: ${{ secrets.DOCKER_REG_PASSWORD }}
+    -
+        name: Login to Docker Hub Container Registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_REG_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_REG_PASSWORD }}
         
     -
         name: Build and push - PRODUCTION
@@ -45,8 +44,8 @@ jobs:
           push: true
           provenance: false
           tags: |
-              ${{ vars.DOCKER_REG_URL }}/kaeser-sc2-api:latest
-              ${{ vars.DOCKER_REG_URL }}/kaeser-sc2-api:${{ steps.package-version.outputs.current-version}}
+              brownindustries/kaeser-sc2-api:latest
+              brownindustries/kaeser-sc2-api:${{ steps.package-version.outputs.current-version}}
               
     # -
     #     name: Build and push - DEV
@@ -57,5 +56,5 @@ jobs:
     #       push: true
     #       provenance: false
     #       tags: |
-    #           ${{ vars.DOCKER_REG_URL }}/kaeser-sc2-api:latest-dev
-    #           ${{ vars.DOCKER_REG_URL }}/kaeser-sc2-api:${{ steps.package-version.outputs.current-version}}-dev
+    #           brownindustries/kaeser-sc2-api:latest-dev
+    #           brownindustries/kaeser-sc2-api:${{ steps.package-version.outputs.current-version}}-dev
