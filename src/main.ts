@@ -10,7 +10,7 @@ async function bootstrap() {
   /* KAESER-SC2-API VERSION */
   /* ************************** */
   /* ************************** */
-  const version = '0.2.2';
+  const version = '0.3.0';
   /* ************************** */
   /* ************************** */
 
@@ -20,7 +20,6 @@ async function bootstrap() {
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
   app.setGlobalPrefix('api');
-  // app.useGlobalFilters(new DuplicateKeyExceptionFilter());
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   app.useLogger(app.get(Logger));
