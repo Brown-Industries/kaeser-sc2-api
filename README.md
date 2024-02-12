@@ -23,24 +23,16 @@ Example: This service is currently deployed to expose compressor data that is wr
 The application will look for an environment file called "kaeser_sc2.env" at launch in 'config': ./config/kaeser_sc2.env.
 The env file needs the following:
 
-**KAESER_ADDRESS=http://kompressor.domain.com**
-REQUIRED: An IP or URL to the Sigma Connect 2 web portal.
-**KAESER_USERNAME=readOnlyUser**
-REQUIRED: Username to a read-only or higher level account. This account should be uses exclusively for this service.
-**KAESER_PASSWORD=readOnlyUserPass**
-REQUIRED: Password to the above account
+**KAESER_ADDRESS=http://kompressor.domain.com** REQUIRED: An IP or URL to the Sigma Connect 2 web portal. <br/>
+**KAESER_USERNAME=readOnlyUser** REQUIRED: Username to a read-only or higher level account. This account should be uses exclusively for this service.<br/>
+**KAESER_PASSWORD=readOnlyUserPass** REQUIRED: Password to the above account
 
 The MQTT configuration is optional, if it is not provided then the service will simply run without the scheduled tasks to publish to a broker.
-**MQTT_HOST=192.168.1.0**
-OPTIONAL: An IP or URL to an MQTT broker.
-**MQTT_PORT=1883**
-OPTIONAL: Defaults to 1883
-**MQTT_USER=mqttUser**
-REQUIRED (IF using MQTT): User to connect to MQTT broker to write data.
-**MQTT_PASS=mqqtPass**
-REQUIRED (IF using MQTT): Password to connect to MQTT broker to write data.
-**MQTT_TOPIC_ROOT=kaeser-sc2-01**
-REQUIRED (IF using MQTT): The topic to publish the compressor data on.
+**MQTT_HOST=192.168.1.0** OPTIONAL: An IP or URL to an MQTT broker. <br/>
+**MQTT_PORT=1883** OPTIONAL: Defaults to 1883. <br/>
+**MQTT_USER=mqttUser** REQUIRED (IF using MQTT): User to connect to MQTT broker to write data. <br/>
+**MQTT_PASS=mqqtPass** REQUIRED (IF using MQTT): Password to connect to MQTT broker to write data. <br/>
+**MQTT_TOPIC_ROOT=kaeser-sc2-01** REQUIRED (IF using MQTT): The topic to publish the compressor data on. <br/>
 
 ## Support
 I am leaving documentation slim for now as I am not sure many will use this. Please post an issue or reach out for help getting this running or adding data if needed.
