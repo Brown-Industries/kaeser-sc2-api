@@ -5,7 +5,7 @@ on:
   push:
     branches:
       - PROD
-      # - 'dev*' # This will match branches that start with 'dev'
+      - 'dev*' # This will match branches that start with 'dev'
 
 jobs:
 
@@ -46,6 +46,16 @@ jobs:
           tags: |
               brownindustries/kaeser-sc2-api:latest
               brownindustries/kaeser-sc2-api:${{ steps.package-version.outputs.current-version}}
+
+    - 
+        name: DockerHub README - PRODUCTION
+        if:  startsWith(github.ref, 'refs/heads/PROD')
+        uses: ms-jpq/sync-dockerhub-readme@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_REG_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_REG_PASSWORD }}
+          repository: brownindustries/kaeser-sc2-api
+          readme: "./README.md"
               
     -
         name: Build and push - DEV
