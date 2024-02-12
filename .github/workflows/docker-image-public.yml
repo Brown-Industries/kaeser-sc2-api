@@ -47,14 +47,14 @@ jobs:
               brownindustries/kaeser-sc2-api:latest
               brownindustries/kaeser-sc2-api:${{ steps.package-version.outputs.current-version}}
               
-    # -
-    #     name: Build and push - DEV
-    #     if: startsWith(github.ref, 'refs/heads/dev')
-    #     uses: docker/build-push-action@v4
-    #     with:
-    #       context: .
-    #       push: true
-    #       provenance: false
-    #       tags: |
-    #           brownindustries/kaeser-sc2-api:latest-dev
-    #           brownindustries/kaeser-sc2-api:${{ steps.package-version.outputs.current-version}}-dev
+    -
+        name: Build and push - DEV
+        if: startsWith(github.ref, 'refs/heads/dev')
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          provenance: false
+          tags: |
+              brownindustries/kaeser-sc2-api:latest-dev
+              brownindustries/kaeser-sc2-api:${{ steps.package-version.outputs.current-version}}-dev
