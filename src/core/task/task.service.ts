@@ -26,6 +26,8 @@ export class TaskService {
 
   @Cron(CronExpression.EVERY_10_SECONDS)
   async every10Sec() {
+    if (!this.mqttService.isActive()) return;
+
     try {
       await this.maintenanceService.bumpSession();
       this.mqttService.setStatus(true);
