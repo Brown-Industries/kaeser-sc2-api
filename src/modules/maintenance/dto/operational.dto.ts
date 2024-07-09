@@ -1,10 +1,10 @@
 export class OperationalDto {
-  powerState: string; //4049696
-  compressorState: string; //4082904
-  startMode: string; //4057536
+  powerState: string; //4446144
+  compressorState: string; //4422008
+  startMode: string; //4462736
 
-  pressure: number; //3231568
-  pressureUnit: string; //3231568
+  pressure: number; //3498296
+  pressureUnit: string; //3498296
 
   inletTemp: number; //3236248
   inletTempUnit: string; //3236248
@@ -18,10 +18,10 @@ export class OperationalDto {
   lastPowerChange: Date; //3200672,3200752
 
   constructor(data: any) {
-    this.powerState = this.extractStringValue(data, 4049696)
+    this.powerState = this.extractStringValue(data, 4446144)
       .trim()
       .toLowerCase();
-    const csRaw = this.extractStringValue(data, 4082904).trim().toLowerCase();
+    const csRaw = this.extractStringValue(data, 4422008).trim().toLowerCase();
 
     if (csRaw.includes('on load')) {
       this.compressorState = 'load';
@@ -31,14 +31,14 @@ export class OperationalDto {
       this.compressorState = csRaw;
     }
 
-    const smRaw = this.extractStringValue(data, 4057536).trim().toLowerCase();
+    const smRaw = this.extractStringValue(data, 4462736).trim().toLowerCase();
     if (smRaw === 'rc') {
       this.startMode = 'remote';
     } else {
       this.startMode = smRaw;
     }
-    this.pressure = this.extractNumericValue(data, 3231568);
-    this.pressureUnit = this.extractUnit(data, 3231568);
+    this.pressure = this.extractNumericValue(data, 3498296);
+    this.pressureUnit = this.extractUnit(data, 3498296);
     this.inletTemp = this.extractNumericValue(data, 3236248);
     this.inletTempUnit = this.extractUnit(data, 3236248);
     this.outletTemp = this.extractNumericValue(data, 3233600);
