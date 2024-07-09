@@ -36,3 +36,5 @@ lerna-debug.log*
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+config/kaeser_sc2.env
+package-lock.json

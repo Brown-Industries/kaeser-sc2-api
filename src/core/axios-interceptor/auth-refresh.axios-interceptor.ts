@@ -74,7 +74,10 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
 
   private needsSessionRefresh(response: AxiosResponse): boolean {
     const payloadCheck = response.data['2'];
-    if (payloadCheck != '') {
+    if (
+      payloadCheck != '' &&
+      payloadCheck != 'Incorrect JSON format received.'
+    ) {
       return false;
     }
     const cookie = new Cookie(response.headers['set-cookie']);

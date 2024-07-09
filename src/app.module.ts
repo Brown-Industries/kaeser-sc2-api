@@ -19,6 +19,7 @@ import { WarmupService } from './warmup.service';
     }),
     LoggerModule.forRoot({
       pinoHttp: {
+        level: process.env?.LOG_LEVEL?.toLowerCase() ?? 'info',
         customProps: (req, res) => ({
           context: 'HTTP',
         }),
@@ -26,6 +27,7 @@ import { WarmupService } from './warmup.service';
           target: 'pino-pretty',
           options: {
             singleLine: true,
+            translateTime: 'SYS:standard',
           },
         },
       },

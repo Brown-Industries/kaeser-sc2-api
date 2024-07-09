@@ -10,7 +10,7 @@ async function bootstrap() {
   /* KAESER-SC2-API VERSION */
   /* ************************** */
   /* ************************** */
-  const version = '0.3.0';
+  const version = '0.3.1';
   /* ************************** */
   /* ************************** */
 
@@ -50,6 +50,10 @@ async function bootstrap() {
       operationsSorter: 'alpha',
     },
   });
+
+  const logger = app.get(Logger);
+  logger.log(`kaeser-sc2-api v${version}`);
+  logger.log(`Log Level: ${process.env?.LOG_LEVEL?.toUpperCase() ?? 'INFO'}`);
 
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
