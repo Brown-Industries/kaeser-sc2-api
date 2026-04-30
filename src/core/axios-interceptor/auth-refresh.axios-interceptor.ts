@@ -18,6 +18,7 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
 
   private sessionCookie: Cookie;
   private sessionAuth: string;
+  private sessionRefreshPromise: Promise<void> | null = null;
 
   private blockRequests = false;
 
@@ -43,12 +44,24 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
     this.sessionAuth = '';
   }
 
-  private startConnectionBlockingPeriod() {
+  private startConnectionBlockingPeriod(): boolean {
+    if (this.blockRequests) {
+      return false;
+    }
+
     this.blockRequests = true;
     timer(60000).subscribe(() => {
       this.blockRequests = false;
       this.logger.log('Resuming requests.');
     });
+
+    return true;
+  }
+
+  private blockForOverSessionLimit() {
+    if (this.startConnectionBlockingPeriod()) {
+      this.logger.error('Over Session Limit. Delaying requests.');
+    }
   }
 
   private registerGlobalInterceptor() {
@@ -56,13 +69,11 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
       (response) => response,
       (error: AxiosError) => {
         if (error.code === 'ECONNRESET' || error.code === 'ECONNREFUSED') {
-          // Handle ECONNRESET error globally here
-          this.logger.error('Connection Error. Delaying requests');
-          this.startConnectionBlockingPeriod();
-          // You can throw a custom error or do something else here
+          if (this.startConnectionBlockingPeriod()) {
+            this.logger.error('Connection Error. Delaying requests');
+          }
           return Promise.reject(new Error('Connection was reset!'));
         }
-        // If it's not an ECONNRESET error, reject the promise with the original error
         return Promise.reject(error);
       },
     );
@@ -90,6 +101,77 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
     return true;
   }
 
+  private isOverSessionLimitCookie(cookie: Cookie): boolean {
+    return cookie.sessionId === '-1';
+  }
+
+  private getHeader(headers, key: string): string {
+    if (!headers) {
+      return '';
+    }
+
+    const value =
+      typeof headers.get === 'function'
+        ? headers.get(key)
+        : headers[key] ?? headers[key.toLowerCase()];
+
+    if (Array.isArray(value)) {
+      return value.join('; ');
+    }
+
+    return value?.toString() ?? '';
+  }
+
+  private requestUsedCurrentSession(
+    config: InternalAxiosRequestConfig,
+  ): boolean {
+    if (!this.sessionCookie.sessionId || !this.sessionAuth) {
+      return false;
+    }
+
+    const sessionAuth = this.getHeader(config.headers, 'Session-Auth');
+    const cookie = this.getHeader(config.headers, 'Cookie');
+
+    return (
+      sessionAuth === this.sessionAuth &&
+      cookie.includes(`Session-Id=${this.sessionCookie.sessionId}`)
+    );
+  }
+
+  private async refreshSessionWithRetry(): Promise<void> {
+    let tempCookie = new Cookie();
+    for (let i = 0; i < 10; i++) {
+      tempCookie = await this.refreshSession(tempCookie);
+      if (tempCookie.activeSession) {
+        this.sessionCookie = tempCookie;
+        this.sessionAuth = sha256Hash(this.ha1 + ':' + tempCookie.sessionKey);
+        return;
+      }
+
+      if (this.blockRequests) {
+        break;
+      }
+    }
+
+    throw new Error('Session refresh failed');
+  }
+
+  private async ensureSession(forceRefresh = false): Promise<void> {
+    if (!forceRefresh && this.sessionCookie.activeSession && this.sessionAuth) {
+      return;
+    }
+
+    if (!this.sessionRefreshPromise) {
+      this.sessionRefreshPromise = this.refreshSessionWithRetry().finally(
+        () => {
+          this.sessionRefreshPromise = null;
+        },
+      );
+    }
+
+    await this.sessionRefreshPromise;
+  }
+
   async refreshSession(cookie: Cookie = new Cookie()): Promise<Cookie> {
     const sAuth = sha256Hash(this.ha1 + ':' + cookie.sessionKey);
 
@@ -110,14 +192,19 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
 
       const newCookie = new Cookie(resp.headers['set-cookie']);
 
-      if (newCookie.sessionId.length <= 1) {
-        return newCookie;
-      } else {
-        newCookie.activeSession = true;
+      if (this.isOverSessionLimitCookie(newCookie)) {
+        this.blockForOverSessionLimit();
         return newCookie;
       }
+
+      if (newCookie.sessionId.length > 1) {
+        newCookie.activeSession = true;
+      }
+
+      return newCookie;
     } catch (err) {
-      console.error('Error refreshing session');
+      this.logger.error('Error refreshing session');
+      return new Cookie();
     }
   }
 
@@ -155,12 +242,11 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
   responseFulfilled(): AxiosFulfilledInterceptor<AxiosResponse> {
     return async (response) => {
       if (this.isLoginEndpoint(response.config.url)) {
-        response.headers['set-cookie'].forEach((cookie) => {
+        response.headers['set-cookie']?.forEach((cookie) => {
           if (cookie.includes('Session-Id')) {
             const sessionId = cookie.split(';')[0].split('=')[1];
             if (sessionId == '-1') {
-              this.logger.error('Over Session Limit. Delaying requests.');
-              this.startConnectionBlockingPeriod();
+              this.blockForOverSessionLimit();
             }
           }
         });
@@ -173,20 +259,9 @@ export class AuthRefreshInterceptor extends AxiosInterceptor {
       }
       if (this.needsSessionRefresh(response)) {
         try {
-          let tempCookie = new Cookie();
-          for (let i = 0; i < 10; i++) {
-            tempCookie = await this.refreshSession(tempCookie);
-            if (tempCookie.activeSession) {
-              this.sessionCookie = tempCookie;
-              this.sessionAuth = sha256Hash(
-                this.ha1 + ':' + tempCookie.sessionKey,
-              );
-              break;
-            }
-          }
-          if (!this.sessionCookie.activeSession) {
-            throw new Error('Session refresh failed');
-          }
+          const forceRefresh = this.requestUsedCurrentSession(response.config);
+          await this.ensureSession(forceRefresh);
+
           const response$ = await this.httpService.request(response.config);
           return await firstValueFrom(response$);
         } catch (err) {
