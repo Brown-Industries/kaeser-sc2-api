@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - PROD
+      - main
       - 'dev*' # This will match branches that start with 'dev'
 
 jobs:
@@ -37,7 +37,7 @@ jobs:
         
     -
         name: Build and push - PRODUCTION
-        if:  startsWith(github.ref, 'refs/heads/PROD')
+        if:  startsWith(github.ref, 'refs/heads/main')
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -49,7 +49,7 @@ jobs:
 
     # - 
     #     name: DockerHub README - PRODUCTION
-    #     if:  startsWith(github.ref, 'refs/heads/PROD')
+    #     if:  startsWith(github.ref, 'refs/heads/main')
     #     uses: ms-jpq/sync-dockerhub-readme@v1
     #     with:
     #       username: ${{ secrets.DOCKER_HUB_REG_USERNAME }}
