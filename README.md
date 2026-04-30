@@ -37,6 +37,13 @@ The MQTT configuration is optional, if it is not provided then the service will 
 ## Support
 I am leaving documentation slim for now as I am not sure many will use this. Please post an issue or reach out for help getting this running or adding data if needed.
 
+## Project documentation
+Additional notes collected from the implementation, reference captures, and KAESER SIGMA CONTROL 2 documentation:
+
+* [Architecture and runtime behavior](docs/architecture.md)
+* [SIGMA CONTROL 2 research notes](docs/sigma-control-2.md)
+* [Reference data and object IDs](docs/reference-data.md)
+
 ## Data Provided
 It is possible to retrieve all data available that can be found at the control or through the standard web interface. This service currently focuses on providing pressures, temperatures, maintence timers, and run modes. Data published thorugh the rest api is duplicated to the MQTT output. Example data output is shown for a few of the transactions below, however, visit /api for a swagger page on the running app.
 
